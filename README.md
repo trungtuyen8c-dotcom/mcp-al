@@ -34,19 +34,10 @@ Scope chỉ được cấp bằng hoặc thấp hơn quyền thật của tài k
 
 Quản lý key: `GET /api/api-keys` (liệt kê), `DELETE /api/api-keys/:id` (thu hồi).
 
-## 2. Cài đặt
+## 2. Cấu hình (không cần cài gì)
 
-```
-npm install
-npm run build
-```
-
-## 3. Cấu hình
-
-Copy `.env.example` thành `.env` hoặc set trực tiếp trong config MCP client:
-
-- `MCP_AL_BASE_URL` — mặc định `http://103.166.184.140/api` (VPS production)
-- `MCP_AL_API_KEY` — key tạo ở bước 1 (bắt buộc)
+Package đã publish public trên npm (`@trungtuyentt/mcp-al`) — chỉ cần Node.js, `npx` tự tải và chạy,
+không cần clone repo/build tay. Đưa đoạn config này + key tạo ở bước 1 cho bất kỳ ai:
 
 ### Claude Desktop / Claude Code (`mcp.json`)
 
@@ -54,14 +45,24 @@ Copy `.env.example` thành `.env` hoặc set trực tiếp trong config MCP clie
 {
   "mcpServers": {
     "mcp-al": {
-      "command": "node",
-      "args": ["/duong-dan-toi/mcp-al/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@trungtuyentt/mcp-al"],
       "env": {
         "MCP_AL_API_KEY": "oak_..."
       }
     }
   }
 }
+```
+
+Muốn trỏ backend khác (không phải VPS production) thì thêm `"MCP_AL_BASE_URL": "http://..."` vào `env`.
+
+### Chạy dev từ source (không bắt buộc)
+
+```
+npm install
+npm run build
+npm start
 ```
 
 ## 4. Tools
