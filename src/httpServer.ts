@@ -53,6 +53,7 @@ async function handleMcp(req: Request, res: Response) {
 
     const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
+      enableJsonResponse: true,
       onsessioninitialized: (id: string) => {
         transports.set(id, transport);
       },
