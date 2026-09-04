@@ -65,6 +65,53 @@ npm run build
 npm start
 ```
 
+## 3. Dùng online (Remote MCP qua HTTP)
+
+Ngoài chạy local bằng `npx` (stdio), server còn chạy được dạng remote HTTP - deploy 1 lần lên VPS,
+ai cũng add thẳng bằng URL, không cần cài Node/npx trên máy.
+
+Khác với bin stdio (1 `MCP_AL_API_KEY` cố định trong env của server), bản HTTP **không lưu key nào
+ở server** - mỗi request phải tự gửi key riêng qua header:
+
+```
+Authorization: Bearer oak_...
+```
+
+(hoặc header `X-API-Key: oak_...`). Mỗi nhân viên dùng đúng key của mình, đúng scope người đó được
+cấp ở bước 1 - server chỉ forward key đó sang backend, không xác thực hộ.
+
+### Chạy server
+
+```
+npm run build
+PORT=8787 MCP_AL_BASE_URL=http://103.166.184.140/api npm run start:http
+```
+
+Endpoint: `POST/GET/DELETE /mcp` (chuẩn Streamable HTTP, stateless - không lưu session). Health check:
+`GET /healthz`. Production chạy trong `orderhangnhat-infra` (service `mcp-al` trong
+`docker-compose.prod.yml`), đứng sau nginx tại path `/mcp-al` - xem
+`orderhangnhat-infra/nginx/conf.d/app.conf`. Không expose port 8787 thẳng ra internet.
+
+### Cấu hình client trỏ tới server online
+
+```json
+{
+  "mcpServers": {
+    "mcp-al": {
+      "type": "http",
+      "url": "http://103.166.184.140/mcp-al",
+      "headers": {
+        "Authorization": "Bearer oak_..."
+      }
+    }
+  }
+}
+```
+
+VPS hiện chưa có domain + TLS (chạy thẳng IP, HTTP thường) - API key gửi qua header sẽ đi ở dạng
+plaintext trên đường truyền, cùng mức rủi ro như JWT của `/api/*` hiện tại. Khi nào có domain + TLS,
+đổi `url` sang `https://<domain>/mcp-al`.
+
 ## 4. Tools
 
 - `list_orders` — liệt kê đơn hàng, lọc theo status/source/dateFrom/dateTo (orderDate)
