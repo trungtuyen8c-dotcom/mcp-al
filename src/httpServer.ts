@@ -1,10 +1,13 @@
 #!/usr/bin/env node
+import { randomUUID } from "node:crypto";
 import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { createMcpServer } from "./createServer.js";
 
-// Mỗi request tra API key riêng từ header - key ai người đó tạo (mỗi nhân viên 1 key, đúng scope
-// quyền của người đó). Server này KHÔNG dùng chung 1 key server-side như bin stdio (src/index.ts).
+// Mỗi session (1 lần "Connect" của 1 client) tra API key riêng từ header lúc initialize - key ai
+// người đó tạo (mỗi nhân viên 1 key, đúng scope quyền của người đó), giữ nguyên cho các request
+// tools/call tiếp theo trong cùng session (nhận diện qua header Mcp-Session-Id).
 function extractApiKey(req: Request): string | null {
   const auth = req.headers["authorization"];
   if (typeof auth === "string" && auth.toLowerCase().startsWith("bearer ")) {
@@ -27,30 +30,48 @@ app.use((req, res, next) => {
 
 app.get("/healthz", (_req, res) => res.status(200).json({ ok: true }));
 
-// Stateless: mỗi request tạo 1 McpServer + transport riêng, gắn đúng apiKey của request đó, rồi đóng
-// lại ngay sau khi trả response. Không giữ session giữa các request vì mọi tool đều chỉ đọc và tự
-// đủ ngữ cảnh trong 1 lần gọi (không cần state chia sẻ giữa các request của cùng 1 client).
+const transports = new Map<string, StreamableHTTPServerTransport>();
+
 async function handleMcp(req: Request, res: Response) {
-  const apiKey = extractApiKey(req);
-  if (!apiKey) {
-    res.status(401).json({
-      jsonrpc: "2.0",
-      error: { code: -32001, message: "Thiếu API key - gửi header Authorization: Bearer <oak_...>" },
-      id: null,
-    });
+  const sessionId = req.headers["mcp-session-id"];
+
+  if (typeof sessionId === "string" && transports.has(sessionId)) {
+    await transports.get(sessionId)!.handleRequest(req, res, req.body);
     return;
   }
 
-  const server = createMcpServer({ apiKey, baseUrl: process.env.MCP_AL_BASE_URL });
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  if (typeof sessionId !== "string" && isInitializeRequest(req.body)) {
+    const apiKey = extractApiKey(req);
+    if (!apiKey) {
+      res.status(401).json({
+        jsonrpc: "2.0",
+        error: { code: -32001, message: "Thiếu API key - gửi header Authorization: Bearer <oak_...>" },
+        id: null,
+      });
+      return;
+    }
 
-  res.on("close", () => {
-    transport.close();
-    server.close();
+    const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (id: string) => {
+        transports.set(id, transport);
+      },
+    });
+    transport.onclose = () => {
+      if (transport.sessionId) transports.delete(transport.sessionId);
+    };
+
+    const server = createMcpServer({ apiKey, baseUrl: process.env.MCP_AL_BASE_URL });
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+    return;
+  }
+
+  res.status(400).json({
+    jsonrpc: "2.0",
+    error: { code: -32000, message: "Thiếu hoặc sai Mcp-Session-Id - phải initialize trước" },
+    id: null,
   });
-
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
 }
 
 app.post("/mcp", handleMcp);
