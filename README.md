@@ -99,7 +99,7 @@ Endpoint: `POST/GET/DELETE /mcp` (chuẩn Streamable HTTP, stateless - không l�
   "mcpServers": {
     "mcp-al": {
       "type": "http",
-      "url": "http://103.166.184.140/mcp-al",
+      "url": "https://www.hanzomjp.com/mcp-al",
       "headers": {
         "Authorization": "Bearer oak_..."
       }
@@ -108,9 +108,8 @@ Endpoint: `POST/GET/DELETE /mcp` (chuẩn Streamable HTTP, stateless - không l�
 }
 ```
 
-VPS hiện chưa có domain + TLS (chạy thẳng IP, HTTP thường) - API key gửi qua header sẽ đi ở dạng
-plaintext trên đường truyền, cùng mức rủi ro như JWT của `/api/*` hiện tại. Khi nào có domain + TLS,
-đổi `url` sang `https://<domain>/mcp-al`.
+Domain `hanzomjp.com` chạy qua Cloudflare (TLS ở edge) trỏ thẳng vào VPS này - API key đi HTTPS,
+không lộ plaintext trên đường truyền.
 
 ## 4. Tools
 
