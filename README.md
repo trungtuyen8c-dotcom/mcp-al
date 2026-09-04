@@ -67,7 +67,7 @@ npm start
 
 ## 4. Tools
 
-- `list_orders` — liệt kê đơn hàng, lọc theo status/source
+- `list_orders` — liệt kê đơn hàng, lọc theo status/source/dateFrom/dateTo (orderDate)
 - `get_order` — chi tiết 1 đơn theo mã đơn
 - `list_customers` — liệt kê khách hàng, lọc theo tên/mã
 - `list_trackings` — liệt kê tracking, lọc theo khách hàng / hàng tồn kho

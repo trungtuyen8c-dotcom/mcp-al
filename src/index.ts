@@ -92,16 +92,20 @@ interface OrderRow {
 
 server.tool(
   "list_orders",
-  "Liệt kê đơn hàng (chỉ đọc). Lọc theo trạng thái/nguồn nếu cần.",
+  "Liệt kê đơn hàng (chỉ đọc). Lọc theo trạng thái/nguồn/khoảng ngày nếu cần.",
   {
     status: z.string().optional().describe("Lọc theo trạng thái đơn, vd: draft, quoted, delivered..."),
     source: z.string().optional().describe("Lọc theo nguồn: yahoo, mercari, normal..."),
+    dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Ngày đặt đơn từ (YYYY-MM-DD), theo orderDate"),
+    dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Ngày đặt đơn đến (YYYY-MM-DD), theo orderDate"),
     limit: z.number().int().positive().max(MAX_ITEMS).default(20).describe("Số đơn tối đa trả về"),
   },
-  async ({ status, source, limit }) => {
+  async ({ status, source, dateFrom, dateTo, limit }) => {
     try {
       const rows = await apiGet<OrderRow[]>("/orders", { source });
-      const filtered = status ? rows.filter((o) => o.status === status) : rows;
+      let filtered = status ? rows.filter((o) => o.status === status) : rows;
+      if (dateFrom) filtered = filtered.filter((o) => o.orderDate.slice(0, 10) >= dateFrom);
+      if (dateTo) filtered = filtered.filter((o) => o.orderDate.slice(0, 10) <= dateTo);
       const sliced = filtered.slice(0, limit);
       return text({
         total_matched: filtered.length,
