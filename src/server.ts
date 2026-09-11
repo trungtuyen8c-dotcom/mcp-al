@@ -52,15 +52,15 @@ export function buildServer(client: ApiClient): McpServer {
     { limit: z.number().int().min(1).max(50).optional(), customer: z.string().max(100).optional(), stock: z.boolean().optional() },
     (a) => client.get('/ext/trackings', { limit: a.limit, customer: a.customer, stock: a.stock === undefined ? undefined : String(a.stock) }))
 
-  readTool('read_report', 'Read one read-only report by name. scope: reports:read. Available reports: ' +
-    'stats_overview, stats_alerts, ' +
-    'control_overview, control_debt_config, control_overdue_debts, control_cartons, control_unmatched, ' +
-    'warehouse_vn_board, warehouse_stored, warehouse_history, warehouse_recon, ' +
-    'users_list, roles_list, permissions_list, audit_log, ' +
-    'companycost_report (param: month=YYYY-MM), companycost_settlement (param: month), companycost_reinforce_price, companycost_electronics_price, ' +
-    'shipments_tax_audit (param: month), shipments_invoice_checklist (param: month), shipments_tax_rows, shipments_documents (param: orderId?), ' +
+  readTool('read_report', 'Read one read-only report by name. Each report needs its own scope (key may lack it): ' +
+    'stats_overview, stats_alerts [scope reports:stats]; ' +
+    'control_overview, control_debt_config, control_overdue_debts, control_cartons, control_unmatched [scope reports:control]; ' +
+    'warehouse_vn_board, warehouse_stored, warehouse_history, warehouse_recon [scope reports:warehouse]; ' +
+    'users_list, roles_list, permissions_list, audit_log [scope reports:admin]; ' +
+    'companycost_report (param: month=YYYY-MM), companycost_settlement (param: month), companycost_reinforce_price, companycost_electronics_price [scope reports:companycost]; ' +
+    'shipments_tax_audit (param: month), shipments_invoice_checklist (param: month), shipments_tax_rows, shipments_documents (param: orderId?) [scope reports:shipments]; ' +
     'accounting_debts, accounting_deposits, accounting_deposits_counts, accounting_opening_balances, accounting_customer_summary, ' +
-    'accounting_monthly_report (param: month), accounting_wallets, accounting_fund, accounting_fund_counts, accounting_reconcile, accounting_statement (param: walletId).',
+    'accounting_monthly_report (param: month), accounting_wallets, accounting_fund, accounting_fund_counts, accounting_reconcile, accounting_statement (param: walletId) [scope reports:accounting].',
     {
       report: z.string().min(1).max(50),
       month: z.string().regex(/^\d{4}-\d{2}$/).optional().describe('YYYY-MM, dùng cho report theo tháng'),
