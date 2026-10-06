@@ -30,8 +30,11 @@ export async function startHttp(cfg: Config) {
   // The bearer may be a raw API key OR an OAuth access token (which wraps the API key).
   function resolveKey(b: string | null): string | null {
     if (!b) return null
-    if (!cfg.keyPrefix || b.startsWith(cfg.keyPrefix)) return b
-    return oauth ? oauth.resolveAccessToken(b) : null
+    if (cfg.keyPrefix && b.startsWith(cfg.keyPrefix)) return b
+    // Try OAuth first: without a key prefix every bearer would otherwise be taken as a raw key.
+    const k = oauth ? oauth.resolveAccessToken(b) : null
+    if (k) return k
+    return cfg.keyPrefix ? null : b
   }
   const challenge = (res: Response) => { if (oauth) res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${oauth.resourceMetadataUrl}"`) }
 
@@ -56,7 +59,7 @@ export async function startHttp(cfg: Config) {
     if (sid && sessions.has(sid)) {
       const s = sessions.get(sid)!
       const rk = resolveKey(bearer(req))
-      if (rk && sha256(rk) !== s.keyHash) { res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'key does not match the session' }, id: null }); return }
+      if (!rk || sha256(rk) !== s.keyHash) { challenge(res); res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: 'missing / invalid key, or key does not match the session' }, id: null }); return }
       s.lastSeen = Date.now(); await s.transport.handleRequest(req, res, req.body); return
     }
     if (sid || !isInitializeRequest(req.body)) { res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request' }, id: null }); return }
@@ -81,11 +84,11 @@ export async function startHttp(cfg: Config) {
     if (!sid || !sessions.has(sid)) { res.status(400).send('missing/invalid session'); return }
     const s = sessions.get(sid)!
     const rk = resolveKey(bearer(req))
-    if (rk && sha256(rk) !== s.keyHash) { res.status(401).send('key does not match'); return }
+    if (!rk || sha256(rk) !== s.keyHash) { challenge(res); res.status(401).send('missing / invalid key, or key does not match the session'); return }
     s.lastSeen = Date.now(); await s.transport.handleRequest(req, res)
   }
   app.get('/mcp', withSession())
   app.delete('/mcp', withSession())
 
-  app.listen(cfg.port, () => logInfo(`HTTP MCP :${cfg.port} — POST /mcp`))
+  return app.listen(cfg.port, () => logInfo(`HTTP MCP :${cfg.port} — POST /mcp`))
 }

@@ -41,7 +41,7 @@ export function buildServer(client: ApiClient): McpServer {
     (a) => client.get('/ext/orders', { limit: a.limit, status: a.status, source: a.source, dateFrom: a.dateFrom, dateTo: a.dateTo }))
 
   readTool('get_order', 'Get one order by code. scope: orders:read.',
-    { code: z.string().min(1).max(30) },
+    { code: z.string().min(1).max(30).refine(c => c !== '.' && c !== '..', 'invalid order code') },
     (a) => client.get(`/ext/orders/${encodeURIComponent(a.code)}`))
 
   readTool('list_customers', 'List customers, filter by name/code. scope: customers:read.',
@@ -63,7 +63,7 @@ export function buildServer(client: ApiClient): McpServer {
     'accounting_monthly_report (param: month), accounting_wallets, accounting_fund, accounting_fund_counts, accounting_reconcile, accounting_statement (param: walletId) [scope reports:accounting].',
     {
       report: z.string().min(1).max(50),
-      month: z.string().regex(/^\d{4}-\d{2}$/).optional().describe('YYYY-MM, dùng cho report theo tháng'),
+      month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('YYYY-MM, dùng cho report theo tháng'),
       walletId: z.string().uuid().optional().describe('bắt buộc cho accounting_statement'),
       orderId: z.string().uuid().optional().describe('lọc cho shipments_documents'),
       status: z.string().optional().describe('pending/confirmed/fix_request, dùng cho accounting_deposits/accounting_fund'),

@@ -45,7 +45,12 @@ export function loadConfig(): Config {
 
   const transport = (process.env.MCP_TRANSPORT || 'http').toLowerCase() === 'stdio' ? 'stdio' : 'http'
   const port = Number(process.env.PORT) || 8787
-  const timeoutMs = Number(process.env.MCP_HTTP_TIMEOUT_MS) || 10_000
+  const rawTimeout = process.env.MCP_HTTP_TIMEOUT_MS?.trim()
+  const timeoutMs = rawTimeout ? Number(rawTimeout) : 10_000
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+    console.error('[config] MCP_HTTP_TIMEOUT_MS must be a positive integer (milliseconds).')
+    process.exit(1)
+  }
   const keyPrefix = process.env.MCP_KEY_PREFIX?.trim() || ''
 
   const cfg: Config = { apiBase, timeoutMs, transport, port, keyPrefix }
