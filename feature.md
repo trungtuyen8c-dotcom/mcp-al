@@ -38,7 +38,7 @@ Section 4 is a **generic worked example** — copy its format for any kind of pr
 | `get_order` | Chi tiết 1 đơn theo mã | `orders:read` | `GET /ext/orders/:code` | `code:string` |
 | `list_customers` | Liệt kê khách hàng, lọc tên/mã | `customers:read` | `GET /ext/customers` | `limit:int?`, `q:string?` |
 | `list_trackings` | Liệt kê tracking, lọc theo khách/tồn kho | `trackings:read` | `GET /ext/trackings` | `limit:int?`, `customer:string?`, `stock:boolean?` |
-| `read_report` | Đọc 1 trong các báo cáo chỉ đọc (stats, kế toán, kho, chứng từ hải quan, user/role/audit...) | `reports:read` | `GET /ext/reports` | `report:string` (enum), `params:object?` |
+| `read_report` | Đọc 1 trong các báo cáo chỉ đọc (stats, kế toán, kho, chứng từ hải quan, user/role/audit...) | `reports:<mảng>` theo từng report (stats, control, warehouse, admin, companycost, shipments, accounting) | `GET /ext/reports` | `report:string`, `month:YYYY-MM?`, `walletId:uuid?`, `orderId:uuid?`, `status:string?`, `limit:int?` |
 
 ---
 
@@ -49,7 +49,13 @@ Section 4 is a **generic worked example** — copy its format for any kind of pr
 | `orders:read` | Đọc đơn hàng | Danh sách/chi tiết đơn (không lộ nội bộ thanh toán) |
 | `customers:read` | Đọc khách hàng | Danh sách khách |
 | `trackings:read` | Đọc tracking | Danh sách tracking, tồn kho |
-| `reports:read` | Đọc báo cáo | Toàn bộ report chỉ đọc (stats/kế toán/kho/hải quan/user-role/audit) |
+| `reports:stats` | Báo cáo tổng quan | stats_overview, stats_alerts |
+| `reports:control` | Trung tâm kiểm soát | control_* |
+| `reports:warehouse` | Kho VN | warehouse_* |
+| `reports:admin` | Quản trị | users_list, roles_list, permissions_list, audit_log |
+| `reports:companycost` | Phải trả kho/cty | companycost_* |
+| `reports:shipments` | Chứng từ hải quan | shipments_* |
+| `reports:accounting` | Kế toán | accounting_* (32 report tổng, xem mô tả tool `read_report` trong `src/server.ts`) |
 
 ---
 
