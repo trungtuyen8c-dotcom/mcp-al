@@ -2,7 +2,7 @@ name: CI mcp-al
 
 on:
   push:
-    branches: [main, rewrite]
+    branches: [main, rewrite, "v*"]
   pull_request:
 
 jobs:
