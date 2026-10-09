@@ -60,7 +60,7 @@ export function buildServer(client: ApiClient): McpServer {
     'companycost_report (param: month=YYYY-MM), companycost_settlement (param: month), companycost_reinforce_price, companycost_electronics_price [scope reports:companycost]; ' +
     'shipments_tax_audit (param: month), shipments_invoice_checklist (param: month), shipments_tax_rows, shipments_documents (param: orderId?) [scope reports:shipments]; ' +
     'accounting_debts, accounting_deposits, accounting_deposits_counts, accounting_opening_balances, accounting_customer_summary, ' +
-    'accounting_monthly_report (param: month), accounting_wallets, accounting_fund, accounting_fund_counts, accounting_reconcile, accounting_statement (param: walletId) [scope reports:accounting].',
+    'accounting_monthly_report (param: month), accounting_wallets, accounting_wallet_ledger (params: from, to = YYYY-MM-DD, wallet = tên thẻ; sổ giao dịch thẻ kèm dự án, để gộp thẻ dùng chung), accounting_fund, accounting_fund_counts, accounting_reconcile, accounting_statement (param: walletId) [scope reports:accounting].',
     {
       report: z.string().min(1).max(50),
       month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe('YYYY-MM, dùng cho report theo tháng'),
